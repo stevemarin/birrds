@@ -5,10 +5,6 @@ Bunting     -> B
 Cardinal    -> C
 Finch       -> F
 Bluebird    -> L
-
-[0 1 2
- 3 4 5
- 6 7 8]
 """
 
 from collections import Counter
@@ -30,8 +26,12 @@ left = 3
 
 MISMATCH = {ord("b"): 3, ord("F"): 3}
 
-CARDS = [list(map(ord, c)) for c in ["CBlL", "FLbf", "FbLc", "CFbl", "fcLB", "lBFC", "blfc", "lFcb", "FbLC"]]
+CARDS = [
+    list(map(ord, c))
+    for c in ["CBlL", "FLbf", "FbLc", "CFbl", "fcLB", "lBFC", "blfc", "lFcb", "FbLC"]
+]
 
+# fmt: off
 EXTERIOR = [
     (top_left,      left),
     (top_left,      top),
@@ -45,7 +45,9 @@ EXTERIOR = [
     (bottom_center, bottom),
     (bottom_right,  bottom),
     (bottom_right,  right)]
+# fmt: on
 
+# fmt: off
 COMPARISONS = [
     (top_left,      right,  top_center,     left),
     (top_left,      bottom, center_left,    top),
@@ -60,9 +62,7 @@ COMPARISONS = [
     (bottom_left,   right,  bottom_center,  left),
     (bottom_center, right,  bottom_right,   left),
 ]
-
-b = ord("b")
-F = ord("F")
+# fmt: on
 
 
 def rotate(s: list, n: int) -> list:
@@ -71,15 +71,14 @@ def rotate(s: list, n: int) -> list:
 
 def is_valid(cards: list[list[int]]) -> bool:
     exterior = Counter([cards[c][o] for c, o in EXTERIOR])
-    if exterior[b] != 3 or exterior[F] != 3:
-        return False
+    for k, v in MISMATCH.items():
+        if exterior[k] != v:
+            return False
 
-    print(exterior)
-    
     for c1, o1, c2, o2 in COMPARISONS:
         if abs(cards[c1][o1] - cards[c2][o2]) != 32:
             return False
-    
+
     return True
 
 
@@ -87,8 +86,6 @@ if __name__ == "__main__":
     from math import factorial
 
     # print("Face Counts:", sorted(Counter("".join(CARDS)).items()))
-    print("Total Combinations:", factorial(9) * 9 ** 4)
-
-
+    print("Total Combinations:", factorial(9) * 9**4)
 
     print(is_valid(CARDS))

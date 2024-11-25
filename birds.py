@@ -1,4 +1,4 @@
-from dataclasses import _DefaultFactory, dataclass
+from dataclasses import dataclass
 from enum import IntEnum, auto
 from copy import copy
 
@@ -112,7 +112,6 @@ def valid_board(board: list[Card]) -> bool:
         return True
 
     return False
-
 
 
 if __name__ == "__main__":

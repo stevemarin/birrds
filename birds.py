@@ -1,235 +1,105 @@
-from dataclasses import dataclass
-from enum import IntEnum, auto
-from copy import copy
+"""
+Head        -> Upper
+Tail        -> Lower
+Bunting     -> B
+Cardinal    -> C
+Finch       -> F
+Bluebird    -> L
+"""
 
-class Bird(IntEnum):
-    Cardinal = auto()
-    Bunting = auto()
-    Bluebird = auto()
-    Finch = auto()
-
-
-class Direction(IntEnum):
-    Bottom = auto()
-    Right = auto()
-    Top = auto()
-    Left = auto()
+from itertools import permutations
+from textwrap import dedent
+from typing import Iterable
 
 
-@dataclass
-class Side:
-    bird: Bird
-    top: bool
+PARTS = {
+    "b": 0b000,
+    "B": 0b001,
+    "c": 0b100,
+    "C": 0b101,
+    "f": 0b010,
+    "F": 0b011,
+    "l": 0b110,
+    "L": 0b111,
+}
 
-    def matches(self, other: "Side") -> bool:
-        return True if self.top ^ other.top and self.bird == other.bird else False
+INVERTED_PARTS = {v: k for k, v in PARTS.items()}
+
+# fmt: off
+CARDS = ["bcfl", "bFCl", "LFfb", 
+         "cFlb", "BlCF", "LbFC",
+         "cLbF", "lBCL", "fBLc"]
+# fmt: on
 
 
-@dataclass
 class Card:
-    id: int
-    bottom: Side
-    right: Side
-    top: Side
-    left: Side
+    __slots__ = ("top", "right", "bottom", "left")
 
-    def matches(self, other: "Card", self_direction: Direction, other_direction: Direction) -> bool:
-        if self.id == other.id:
-            return False
-        
-        if self.get_side(self_direction).matches(other.get_side(other_direction)):
+    def __init__(self, b: str) -> None:
+        for val, name in zip(b, self.__slots__):
+            setattr(self, name, PARTS[val])
+
+    def __repr__(self) -> str:
+        return "".join(map(INVERTED_PARTS.__getitem__, [self.top, self.right, self.bottom, self.left]))
+
+    def rotate(self) -> None:
+        self.right, self.bottom, self.left, self.top = (self.top, self.right, self.bottom, self.left)
+
+
+class Game:
+    def __init__(self, cards: Iterable[Card]):
+        self.cards = list(cards)
+
+    def __repr__(self) -> str:
+        return dedent(f"""
+             {INVERTED_PARTS[self.cards[0].top]}   {INVERTED_PARTS[self.cards[1].top]}   {INVERTED_PARTS[self.cards[2].top]} 
+            {INVERTED_PARTS[self.cards[0].left]} {INVERTED_PARTS[self.cards[0].right]} {INVERTED_PARTS[self.cards[1].left]} {INVERTED_PARTS[self.cards[1].right]} {INVERTED_PARTS[self.cards[2].left]} {INVERTED_PARTS[self.cards[2].right]}
+             {INVERTED_PARTS[self.cards[0].bottom]}   {INVERTED_PARTS[self.cards[1].bottom]}   {INVERTED_PARTS[self.cards[2].bottom]} 
+             {INVERTED_PARTS[self.cards[3].top]}   {INVERTED_PARTS[self.cards[4].top]}   {INVERTED_PARTS[self.cards[5].top]} 
+            {INVERTED_PARTS[self.cards[3].left]} {INVERTED_PARTS[self.cards[3].right]} {INVERTED_PARTS[self.cards[4].left]} {INVERTED_PARTS[self.cards[4].right]} {INVERTED_PARTS[self.cards[5].left]} {INVERTED_PARTS[self.cards[5].right]}
+             {INVERTED_PARTS[self.cards[3].bottom]}   {INVERTED_PARTS[self.cards[4].bottom]}   {INVERTED_PARTS[self.cards[5].bottom]} 
+             {INVERTED_PARTS[self.cards[6].top]}   {INVERTED_PARTS[self.cards[7].top]}   {INVERTED_PARTS[self.cards[8].top]} 
+            {INVERTED_PARTS[self.cards[6].left]} {INVERTED_PARTS[self.cards[6].right]} {INVERTED_PARTS[self.cards[7].left]} {INVERTED_PARTS[self.cards[7].right]} {INVERTED_PARTS[self.cards[8].left]} {INVERTED_PARTS[self.cards[8].right]}
+             {INVERTED_PARTS[self.cards[6].bottom]}   {INVERTED_PARTS[self.cards[7].bottom]}   {INVERTED_PARTS[self.cards[8].bottom]} 
+        """)
+
+    @staticmethod
+    def check_edges(a: int, b: int) -> bool:
+        return (a >> 1) == (b >> 1) and a != b
+
+    def check_left(self, idx: int) -> bool:
+        if idx % 3 == 0:
             return True
-        
+        else:
+            return self.check_edges(self.cards[idx - 1].right, self.cards[idx].left)
+
+    def check_up(self, idx: int) -> bool:
+        if idx < 3:
+            return True
+        else:
+            return self.check_edges(self.cards[idx - 3].bottom, self.cards[idx].top)
+
+    def check_idx(self, idx: int) -> bool:
+        for _ in range(4):
+            if self.check_up(idx) and self.check_left(idx):
+                if idx == 8:
+                    return True
+                else:
+                    return self.check_idx(idx + 1)
+            else:
+                self.cards[idx].rotate()
+
         return False
-        
-
-    def get_side(self, direction: Direction) -> Side:
-        match direction:
-            case Direction.Bottom:
-                return self.bottom
-            case Direction.Right:
-                return self.right
-            case Direction.Top:
-                return self.top
-            case Direction.Left:
-                return self.left
-
-
-
-    def rotate(self, times: int = 1):
-        match times % 4:
-            case 0:
-                pass
-            case 1:
-                self.right, self.top, self.left, self.bottom = (
-                    self.bottom,
-                    self.right,
-                    self.top,
-                    self.left,
-                )
-            case 2:
-                self.top, self.left, self.bottom, self.right = (
-                    self.bottom,
-                    self.right,
-                    self.top,
-                    self.left,
-                )
-            case 3:
-                self.left, self.bottom, self.right, self.top = (
-                    self.bottom,
-                    self.right,
-                    self.top,
-                    self.left,
-                )
-            case _:
-                raise NotImplementedError
-
-def valid_board(board: list[Card]) -> bool:
-    # the board layout is:
-    #   [0 1 2
-    #    3 4 5
-    #    6 7 8]
-
-    if (
-        # l to r top row
-        board[0].right.matches(board[1].left)
-        and board[1].right.matches(board[2].left)
-        # top to middle row
-        and board[0].bottom.matches(board[3].top)
-        and board[1].bottom.matches(board[4].top)
-        and board[2].bottom.matches(board[5].top)
-        # l to r middle row
-        and board[3].right.matches(board[4].left)
-        and board[4].right.matches(board[5].left)
-        # middle to bottom row
-        and board[3].bottom.matches(board[6].top)
-        and board[4].bottom.matches(board[7].top)
-        and board[5].bottom.matches(board[8].top)
-        # l to r bottom row
-        and board[6].right.matches(board[7].left)
-        and board[7].right.matches(board[8].left)
-    ):
-        return True
-
-    return False
 
 
 if __name__ == "__main__":
+    game = None
+    for i, card_order in enumerate(permutations(range(9))):
+        if i % 1000 == 0:
+            print("idx =", i)
+        game = Game(map(Card, [CARDS[idx] for idx in card_order]))
+        if game.check_idx(0):
+            break
 
-    cards = [
-        Card(
-            0,
-            Side(Bird.Cardinal, True),
-            Side(Bird.Bunting, True),
-            Side(Bird.Bluebird, False),
-            Side(Bird.Bluebird, True),
-        ),
-        Card(
-            1,
-            Side(Bird.Finch, True),
-            Side(Bird.Bluebird, True),
-            Side(Bird.Bunting, False),
-            Side(Bird.Finch, False),
-        ),
-        Card(
-            2,
-            Side(Bird.Finch, True),
-            Side(Bird.Bunting, False),
-            Side(Bird.Bluebird, True),
-            Side(Bird.Cardinal, False),
-        ),
-        Card(
-            3,
-            Side(Bird.Cardinal, True),
-            Side(Bird.Finch, True),
-            Side(Bird.Bunting, False),
-            Side(Bird.Bluebird, False),
-        ),
-        Card(
-            4,
-            Side(Bird.Finch, False),
-            Side(Bird.Cardinal, False),
-            Side(Bird.Bluebird, True),
-            Side(Bird.Bunting, True),
-        ),
-        Card(
-            5,
-            Side(Bird.Bluebird, False),
-            Side(Bird.Bunting, True),
-            Side(Bird.Finch, True),
-            Side(Bird.Cardinal, True),
-        ),
-        Card(
-            6,
-            Side(Bird.Bunting, False),
-            Side(Bird.Bluebird, False),
-            Side(Bird.Finch, False),
-            Side(Bird.Cardinal, False),
-        ),
-        Card(
-            7,
-            Side(Bird.Bluebird, False),
-            Side(Bird.Finch, True),
-            Side(Bird.Cardinal, False),
-            Side(Bird.Bunting, False),
-        ),
-        Card(
-            8,
-            Side(Bird.Finch, True),
-            Side(Bird.Bunting, False),
-            Side(Bird.Bluebird, True),
-            Side(Bird.Cardinal, True),
-        ),
-    ]
-
-
-    assert len(cards) == 9
-    assert (
-        len(
-            {
-                side.bird
-                for card in cards
-                for side in (card.bottom, card.right, card.top, card.right)
-            }
-        )
-        == 4
-    )
-
-    rotated_cards = [copy(card) for card in cards for _ in range(4)]
-    for idx in range(len(rotated_cards)):
-        card = rotated_cards[idx]
-        card.rotate(idx % 4)
-
-
-        def matches_left_to_right(card: Card, other: Card) -> bool:
-            if (card.id != other.id and card.right.matches(other.left)):
-                return True
-            return False
-        
-        def matches_top_to_bottom(card: Card, other: Card) -> bool:
-            if (card.id != other.id and card.bottom.matches(other.top)):
-                return True
-            return False
-
-        def matches_both(card: Card, other: Card) -> bool:
-            if matches_left_to_right(card, other) and matches_top_to_bottom(card, other):
-                return True
-            return False
-
-
-        queue = [([card], filter(lambda other: card.id != other.id, copy(rotated_cards))) for card in cards]
-
-        while len(queue) > 0:
-            board, remaining_cards = queue.pop()
-            last_card_idx = len(board) - 1
-
-            assert 0 < last_card_idx < 7
-
-            if last_card_idx in (1, 3, 4, 6, 7):
-                # check right
-                pass
-
-            if last_card_idx in (3, 4, 5, 6, 7, 8):
-                # check up
-                pass
-            
+    assert game is not None
+    print("AAA", game)

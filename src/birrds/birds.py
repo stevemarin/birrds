@@ -7,9 +7,15 @@ Finch       -> F
 Bluebird    -> L
 """
 
-from itertools import permutations
 from textwrap import dedent
 from typing import Iterable
+
+
+# fmt: off
+CARDS = ["bcfl", "bFCl", "LFfb", 
+         "cFlb", "BlCF", "LbFC",
+         "cLbF", "lBCL", "fBLc"]
+# fmt: on
 
 
 PARTS = {
@@ -24,12 +30,6 @@ PARTS = {
 }
 
 INVERTED_PARTS = {v: k for k, v in PARTS.items()}
-
-# fmt: off
-CARDS = ["bcfl", "bFCl", "LFfb", 
-         "cFlb", "BlCF", "LbFC",
-         "cLbF", "lBCL", "fBLc"]
-# fmt: on
 
 
 class Card:
@@ -90,6 +90,3 @@ class Game:
                 self.cards[idx].rotate()
 
         return False
-
-
-if __name__ == "__main__":

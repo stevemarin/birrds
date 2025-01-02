@@ -87,7 +87,7 @@ packages:
 - pypi: .
   name: birrds
   version: 0.1.0
-  sha256: f1a22c522a42e5b466900211c6d4cd26fc084928d819df7ba8cc01b48d1dcca9
+  sha256: a0a938206e26b67cfe4da0ed324d5bd4bd3a33ce9946bb4bc6796dbd23445e50
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-h4bc722e_7.conda
